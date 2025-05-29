@@ -122,6 +122,71 @@ FROM CLIENT c INNER JOIN PERSON p ON (c.person=p.id)
 -- endregion
 
 -- region Question 4
-CREATE OR REPLACE PROCEDURE startTrip(dockid integer, clientid  integer) ...
---TODO
+CREATE OR REPLACE PROCEDURE startTrip(dockid integer, clientid integer) LANGUAGE plpgsql AS $$
+DECLARE
+    v_scooter_id INTEGER;
+    v_station_id INTEGER;
+    v_card_id INTEGER;
+    v_credit NUMERIC;
+    v_unlock_cost NUMERIC;
+BEGIN
+    -- Obter o custo de desbloqueio
+SELECT unlock INTO v_unlock_cost FROM SERVICECOST LIMIT 1;
+
+    -- Verificar se a doca existe e está ocupada
+SELECT scooter, station INTO v_scooter_id, v_station_id
+FROM DOCK
+WHERE number = dockid AND state = 'occupy';
+
+IF v_scooter_id IS NULL THEN
+        RAISE EXCEPTION 'A doca % não existe ou não tem trotineta disponível.', dockid;
+END IF;
+
+    -- Verificar se o cliente existe e obter o cartão
+SELECT cd.id, cd.credit INTO v_card_id, v_credit
+FROM CLIENT c
+         JOIN CARD cd ON c.person = cd.client
+WHERE c.person = clientid;
+
+IF v_card_id IS NULL THEN
+        RAISE EXCEPTION 'O cliente com ID % não existe ou não tem cartão associado.', clientid;
+END IF;
+
+    -- Verificar se o cliente tem saldo suficiente
+    IF v_credit < v_unlock_cost THEN
+        RAISE EXCEPTION 'O cliente não tem saldo suficiente. Saldo atual: %, necessário: %.', v_credit, v_unlock_cost;
+END IF;
+
+    -- Verificar se o cliente já tem uma viagem a decorrer
+    IF EXISTS (SELECT 1 FROM TRAVEL WHERE client = clientid AND dfinal IS NULL) THEN
+        RAISE EXCEPTION 'O cliente já tem uma viagem a decorrer.';
+END IF;
+
+    -- Verificar se a trotineta já está em uso
+    IF EXISTS (SELECT 1 FROM TRAVEL WHERE scooter = v_scooter_id AND dfinal IS NULL) THEN
+        RAISE EXCEPTION 'A trotineta já está em uso numa viagem a decorrer.';
+END IF;
+
+    -- Iniciar a transação
+BEGIN
+    -- Atualizar o estado da doca para livre e remover a trotineta
+UPDATE DOCK
+SET state = 'free',
+    scooter = NULL
+WHERE number = dockid;
+
+    -- Registrar a nova viagem
+INSERT INTO TRAVEL (dinitial, client, scooter, stinitial)
+VALUES (CURRENT_TIMESTAMP, clientid, v_scooter_id, v_station_id);
+
+    -- Deduzir o custo de desbloqueio do saldo do cartão
+UPDATE CARD
+SET credit = credit - v_unlock_cost
+WHERE id = v_card_id;
+EXCEPTION
+        WHEN OTHERS THEN
+            RAISE;
+END;
+END;
+$$;
 -- endregion
