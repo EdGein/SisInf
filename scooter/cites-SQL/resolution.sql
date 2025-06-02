@@ -50,7 +50,8 @@ BEGIN
     
     RETURN occupancy_rate;
 END;
-$$ LANGUAGE plpgsql;
+$$
+LANGUAGE plpgsql;
 -- endregion
  
 -- region Question 3

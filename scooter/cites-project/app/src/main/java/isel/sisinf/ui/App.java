@@ -152,8 +152,33 @@ class UI
     private static final int TAB_SIZE = 24;
 
     private void createCostumer() {
-        // TODO
         System.out.println("createCostumer()");
+
+        Scanner scanner = new Scanner(System.in);
+        try {
+            System.out.println("--- Criar Cliente ---");
+
+            System.out.print("Nome: ");
+            String name = scanner.nextLine();
+
+            System.out.print("Email: ");
+            String email = scanner.nextLine();
+
+            System.out.print("NIF: ");
+            int taxNumber = Integer.parseInt(scanner.nextLine());
+
+            System.out.print("Tipo de Cartão (resident/tourist): ");
+            String typeOfCard = scanner.nextLine();
+
+            System.out.print("Crédito inicial: ");
+            double credit = Double.parseDouble(scanner.nextLine());
+
+            isel.sisinf.jpa.Dal.insertRider(name, email, taxNumber, typeOfCard, credit);
+            System.out.println("Cliente criado com sucesso.");
+
+        } catch (Exception e) {
+            System.err.println("Erro ao criar cliente: " + e.getMessage());
+        }
     }
   
     private void listCostumer()

@@ -23,8 +23,35 @@ SOFTWARE.
 */
 package isel.sisinf.jpa;
 
+import jakarta.persistence.*;
 public class Dal
 {
+    private static final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dal-lab");
     //For Demonstration purpose only
     public static String version(){ return "1.0";}
+
+    public static void insertRider(String name, String email, int taxnumber, String typeOfCard, double credit) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+            em.createNativeQuery("""
+                INSERT INTO RIDER (name, email, taxnumber, typeofcard, credit, dtregister)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """)
+                    .setParameter(1, name)
+                    .setParameter(2, email)
+                    .setParameter(3, taxnumber)
+                    .setParameter(4, typeOfCard)
+                    .setParameter(5, credit)
+                    .executeUpdate();
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
 }
