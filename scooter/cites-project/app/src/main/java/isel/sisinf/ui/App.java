@@ -215,8 +215,21 @@ class UI
 
     private void parkScooter()
     {
-        // TODO
         System.out.println("parkScooter()");
+        Scanner scanner = new Scanner(System.in);
+        try {
+            System.out.println("--- Estacionar Trotineta ---");
+            System.out.print("ID do Cliente: ");
+            int clientId = Integer.parseInt(scanner.nextLine());
+
+            System.out.print("ID da Doca: ");
+            int dockId = Integer.parseInt(scanner.nextLine());
+
+            isel.sisinf.jpa.Dal.parkScooter(clientId, dockId);
+
+        } catch (Exception e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
         
     }
 

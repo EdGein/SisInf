@@ -23,11 +23,10 @@ SOFTWARE.
 */
 package isel.sisinf.jpa;
 
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.Persistence;
+import isel.sisinf.model.Dock;
+import jakarta.persistence.*;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public class Dal
@@ -120,6 +119,56 @@ public class Dal
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             System.err.println("Erro ao iniciar a viagem: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+    public static void parkScooter(int clientId, int dockId) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+
+            // 1. Find ongoing trip
+            Object[] trip = (Object[]) em.createNativeQuery("""
+            SELECT dinitial, scooter FROM TRAVEL 
+            WHERE client = ? AND dfinal IS NULL
+        """).setParameter(1, clientId)
+                    .getSingleResult();
+
+            Timestamp dinitial = (Timestamp) trip[0];
+            int scooterId = (int) trip[1];
+
+            // 2. Get dock and attach optimistic lock
+            Dock dock = em.find(Dock.class, dockId, LockModeType.OPTIMISTIC);
+            em.refresh(dock);
+            if (!"free".equals(dock.getState())) {
+                throw new RuntimeException("Doca não está livre.");
+            }
+
+            // 3. Update dock
+            dock.setScooter(scooterId);
+            dock.setState("occupy");
+
+            // 4. Update trip
+            em.createNativeQuery("""
+            UPDATE TRAVEL SET dfinal = CURRENT_TIMESTAMP, stfinal = ?
+            WHERE client = ? AND dinitial = ?
+        """)
+                    .setParameter(1, dockId)
+                    .setParameter(2, clientId)
+                    .setParameter(3, dinitial)
+                    .executeUpdate();
+
+            tx.commit();
+            System.out.println("Trotineta estacionada com sucesso.");
+        } catch (OptimisticLockException e) {
+            if (tx.isActive()) tx.rollback();
+            System.err.println("Erro: Conflito de concorrência ao tentar estacionar.");
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            System.err.println("Erro: " + e.getMessage());
         } finally {
             em.close();
         }
