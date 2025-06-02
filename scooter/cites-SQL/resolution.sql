@@ -11,12 +11,62 @@
 
 
 -- region Question 1.a 
-CREATE OR REPLACE TRIGGER ...
+CREATE OR REPLACE FUNCTION scooter_in_dock()
+RETURNS TRIGGER AS $$
+DECLARE
+    dock_status TEXT;
+BEGIN
+    SELECT state INTO dock_status
+    FROM DOCK
+    WHERE scooter = NEW.scooter;
+    IF dock_status IS NULL THEN
+        RAISE EXCEPTION 'Scooter % is not docked and cannot start a trip.', NEW.scooter;
+    ELSIF dock_status != 'occupy' THEN
+        RAISE EXCEPTION 'Scooter % is not in an occupied dock and cannot start a trip.', NEW.scooter;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trigger_scooter_in_dock
+BEFORE INSERT ON TRAVEL
+FOR EACH ROW
+EXECUTE FUNCTION scooter_in_dock();
 --TODO
 -- endregion
 
 -- region Question 1.b
-CREATE OR REPLACE TRIGGER ...
+CREATE OR REPLACE FUNCTION check_ongoing_trip()
+RETURNS TRIGGER AS $$
+DECLARE
+    ongoing_scooter_count INT;
+    ongoing_client_count INT;
+BEGIN
+    SELECT COUNT(*) INTO ongoing_scooter_count
+    FROM TRAVEL
+    WHERE scooter = NEW.scooter AND dfinal IS NULL;
+
+    IF ongoing_scooter_count > 0 THEN
+        RAISE EXCEPTION 'Scooter % is already in use in an ongoing trip.', NEW.scooter;
+    END IF;
+
+    SELECT COUNT(*) INTO ongoing_client_count
+    FROM TRAVEL
+    WHERE client = NEW.client AND dfinal IS NULL;
+
+    IF ongoing_client_count > 0 THEN
+        RAISE EXCEPTION 'Client % is already on an ongoing trip.', NEW.client;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_check_ongoing_trip
+BEFORE INSERT ON TRAVEL
+FOR EACH ROW
+EXECUTE FUNCTION check_ongoing_trip();
 --TODO
 -- endregion
 
