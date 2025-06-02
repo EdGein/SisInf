@@ -21,7 +21,7 @@ CREATE OR REPLACE TRIGGER ...
 -- endregion
 
 -- region Question 2
-CREATE OR REPLACE FUNCTION fx_dock_occupancy(stationkid integer)
+CREATE OR REPLACE FUNCTION fx_dock_occupancy(stationid integer)
 RETURNS NUMERIC AS $$
 DECLARE
     total_docks INTEGER;

@@ -23,7 +23,13 @@ SOFTWARE.
 */
 package isel.sisinf.jpa;
 
-import jakarta.persistence.*;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Persistence;
+
+import java.util.List;
+
 public class Dal
 {
     private static final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dal-lab");
@@ -50,6 +56,51 @@ public class Dal
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
+        }
+    }
+    public static void listAllRiders() {
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            List<Object[]> rows = em.createNativeQuery("""
+            SELECT name, email, taxnumber, dtregister, credit, typeofcard 
+            FROM RIDER
+            ORDER BY name
+        """).getResultList();
+
+            System.out.printf("%-20s %-30s %-12s %-20s %-8s %-10s\n",
+                    "Nome", "Email", "NIF", "Data Registo", "Saldo", "Passe");
+
+            for (Object[] row : rows) {
+                System.out.printf("%-20s %-30s %-12s %-20s %-8s %-10s\n",
+                        row[0], row[1], row[2], row[3], row[4], row[5]);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao listar clientes: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+    public static void listDocksWithOccupancy() {
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            List<Object[]> results = em.createNativeQuery("""
+            SELECT s.id, s.latitude, s.longitude, fx_dock_occupancy(s.id::int) AS occupancy
+            FROM STATION s
+            ORDER BY s.id
+        """).getResultList();
+
+            System.out.printf("%-10s %-12s %-12s %-12s\n", "StationID", "Latitude", "Longitude", "Occupancy");
+            for (Object[] row : results) {
+                System.out.printf("%-10s %-12s %-12s %-12.2f\n",
+                        row[0], row[1], row[2], row[3]);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Erro ao listar docas: " + e.getMessage());
         } finally {
             em.close();
         }

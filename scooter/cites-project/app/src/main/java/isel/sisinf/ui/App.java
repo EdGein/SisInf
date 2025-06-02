@@ -183,14 +183,14 @@ class UI
   
     private void listCostumer()
     {
-        // TODO
         System.out.println("listCostumer()");
+        isel.sisinf.jpa.Dal.listAllRiders();
     }
 
     private void listDocks()
     {
-        // TODO
         System.out.println("listDocks()");
+        isel.sisinf.jpa.Dal.listDocksWithOccupancy();
 
     }
 
