@@ -195,8 +195,22 @@ class UI
     }
 
     private void startTrip() {
-        // TODO
         System.out.println("startTrip()");
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("--- Iniciar Viagem ---");
+
+        try {
+            System.out.print("ID da Doca: ");
+            int dockId = Integer.parseInt(scanner.nextLine());
+
+            System.out.print("ID do Cliente: ");
+            int clientId = Integer.parseInt(scanner.nextLine());
+
+            isel.sisinf.jpa.Dal.startTrip(dockId, clientId);
+
+        } catch (Exception e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
     }
 
     private void parkScooter()

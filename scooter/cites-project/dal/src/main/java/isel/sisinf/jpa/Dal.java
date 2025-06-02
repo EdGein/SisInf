@@ -105,4 +105,23 @@ public class Dal
             em.close();
         }
     }
+    public static void startTrip(int dockId, int clientId) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+            em.createNativeQuery("CALL startTrip(?, ?)")
+                    .setParameter(1, dockId)
+                    .setParameter(2, clientId)
+                    .executeUpdate();
+            tx.commit();
+            System.out.println("Viagem iniciada com sucesso.");
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            System.err.println("Erro ao iniciar a viagem: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
 }
