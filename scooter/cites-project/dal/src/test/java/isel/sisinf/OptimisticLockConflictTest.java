@@ -1,7 +1,13 @@
 package isel.sisinf;
 
 import isel.sisinf.model.Dock;
-import jakarta.persistence.*;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Persistence;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 
 import junit.framework.TestCase;
 
@@ -14,6 +20,14 @@ public class OptimisticLockConflictTest extends TestCase {
         super.setUp();
         if (emf == null)
             emf = Persistence.createEntityManagerFactory("dal-lab");
+    }
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        if (emf != null) {
+            emf.close();
+            emf = null;
+        }
     }
 
     public void testOptimisticLockConflict() {
